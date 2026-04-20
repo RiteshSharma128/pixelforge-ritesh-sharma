@@ -21,26 +21,46 @@
 // export default api
 
 
-import axios from 'axios'
+// import axios from 'axios'
 
-const api = axios.create({
-  // baseURL: 'http://localhost:8001/api',
-  baseURL: 'https://pixelforge-backend-lkiz.onrender.com/api',
-  withCredentials: true,
-  headers: { 'Content-Type': 'application/json' }
-})
+// const api = axios.create({
+//   // baseURL: 'http://localhost:8001/api',
+//   baseURL: 'https://pixelforge-backend-lkiz.onrender.com/api',
+//   withCredentials: true,
+//   headers: { 'Content-Type': 'application/json' }
+// })
 
-api.interceptors.response.use(
-  r => r,
-  err => {
-    if (err.response?.status === 401) {
-      document.cookie = 'pf_token=;expires=Thu,01 Jan 1970 00:00:00 UTC;path=/'
-      if (!window.location.pathname.includes('/auth')) {
-        window.location.href = '/auth'
+// api.interceptors.response.use(
+//   r => r,
+//   err => {
+//     if (err.response?.status === 401) {
+//       document.cookie = 'pf_token=;expires=Thu,01 Jan 1970 00:00:00 UTC;path=/'
+//       if (!window.location.pathname.includes('/auth')) {
+//         window.location.href = '/auth'
+//       }
+//     }
+//     return Promise.reject(err)
+//   }
+// )
+
+// export default api
+
+
+
+
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8001',
+        changeOrigin: true,
+        secure: false
       }
     }
-    return Promise.reject(err)
   }
-)
-
-export default api
+})
