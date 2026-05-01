@@ -1,3 +1,4 @@
+
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
@@ -10,28 +11,62 @@ const FEATURES = [
   { icon: <Users size={14}/>, text: 'Team Workspace · Comments' },
 ]
 
-const AVATARS = ['🎨','🚀','⚡','🔥','💎','🌟','🎯','🦋','🐉','🌊','🎭','🏔️']
+const AVATARS = ['🎨','💎','🌟','🎯','🦋','🐉','🌊','🎭','🏔️']
 const PLANS = [
   { id:'free', name:'Free', desc:'50 images/mo · Basic features', badge:'' },
   { id:'pro',  name:'Pro',  desc:'Unlimited · All tools · Brand Kit · Team (5)', badge:'Popular' },
   { id:'team', name:'Team', desc:'Everything in Pro · Unlimited team · Priority', badge:'' },
 ]
 
+const isValidEmail = (email) => {
+  const regex = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/
+  return regex.test(email.trim())
+}
+
+// ✅ EmailInput BAHAR nikala — cursor bug fix
+const EmailInput = ({ value, onChange, onBlur, emailError }) => (
+  <div>
+    <label className="label">Email</label>
+    <input
+      className={`input ${emailError ? 'border-red-500 focus:border-red-500' : ''}`}
+      type="email"
+      placeholder="you@example.com"
+      value={value}
+      onChange={onChange}
+      onBlur={onBlur}
+    />
+    {emailError && (
+      <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
+        <span>⚠</span> {emailError}
+      </p>
+    )}
+  </div>
+)
+
 export default function AuthPage() {
-  const { login, register, demoLogin } = useAuth()
-  const [tab, setTab]         = useState('login')   // login | signup | onboard
+  const { login, register } = useAuth()
+  const [tab, setTab]       = useState('login')
   const [loading, setLoading] = useState(false)
   const [showPass, setShowPass] = useState(false)
-  // onboard state
-  const [obStep, setObStep]   = useState(1)
-  const [selAvatar, setSelAvatar] = useState('🎨')
+  const [emailError, setEmailError] = useState('')
+  const [obStep, setObStep] = useState(1)
+  const [selAvatar, setSelAvatar] = useState('')
   const [selPlan, setSelPlan] = useState('free')
   const [newUserData, setNewUserData] = useState(null)
-  // form fields
   const [form, setForm] = useState({ name:'', email:'', password:'', workspace:'', role:'Designer' })
-  const f = k => e => setForm(p => ({ ...p, [k]: e.target.value }))
 
-  // password strength
+  const f = k => e => {
+    setForm(p => ({ ...p, [k]: e.target.value }))
+    if (k === 'email') {
+      const val = e.target.value
+      if (val && !isValidEmail(val)) {
+        setEmailError('Please enter a valid email address')
+      } else {
+        setEmailError('')
+      }
+    }
+  }
+
   const passScore = (() => {
     const p = form.password
     let s = 0
@@ -46,6 +81,10 @@ export default function AuthPage() {
   const handleLogin = async e => {
     e.preventDefault()
     if (!form.email || !form.password) return toast.error('Fill all fields')
+    if (!isValidEmail(form.email)) {
+      setEmailError('Please enter a valid email address')
+      return toast.error('Invalid email address')
+    }
     setLoading(true)
     try {
       const d = await login(form.email, form.password)
@@ -58,6 +97,10 @@ export default function AuthPage() {
   const handleSignup = async e => {
     e.preventDefault()
     if (!form.name || !form.email || !form.password) return toast.error('Fill all fields')
+    if (!isValidEmail(form.email)) {
+      setEmailError('Please enter a valid email address')
+      return toast.error('Invalid email address')
+    }
     if (form.password.length < 8) return toast.error('Password min 8 characters')
     setLoading(true)
     try {
@@ -70,16 +113,6 @@ export default function AuthPage() {
     }
   }
 
-  const handleDemo = async () => {
-    setLoading(true)
-    try {
-      const d = await demoLogin()
-      toast.success(d.message)
-    } catch (err) {
-      toast.error('Demo failed')
-    } finally { setLoading(false) }
-  }
-
   const finishOnboard = async () => {
     setLoading(true)
     try {
@@ -90,7 +123,7 @@ export default function AuthPage() {
         role:   form.role,
         workspace: form.workspace || 'My Studio'
       })
-      toast.success('Welcome to PixelForge! 🎉')
+      toast.success('Welcome to PixelForge! Your account has been created.')
     } catch (err) {
       toast.error(err.response?.data?.message || 'Registration failed')
     } finally { setLoading(false) }
@@ -101,10 +134,8 @@ export default function AuthPage() {
       {/* ── LEFT PANEL ── */}
       <div className="hidden lg:flex w-[46%] flex-col justify-between p-12 relative overflow-hidden"
         style={{ background: 'linear-gradient(145deg,#4c1d95 0%,#1e1b4b 50%,#07070f 100%)' }}>
-        {/* dot pattern */}
         <div className="absolute inset-0 opacity-30"
           style={{ backgroundImage:'radial-gradient(rgba(167,139,250,0.4) 1px,transparent 1px)', backgroundSize:'32px 32px' }}/>
-        {/* glow */}
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-96 h-96 bg-violet-600/20 rounded-full blur-3xl"/>
 
         <div className="relative z-10 flex items-center gap-3">
@@ -125,9 +156,9 @@ export default function AuthPage() {
             Professional AI image generation, brand kits, ad banners, and team collaboration — all free to start.
           </p>
           <div className="flex flex-col gap-3">
-            {FEATURES.map((f,i) => (
+            {FEATURES.map((feat, i) => (
               <div key={i} className="flex items-center gap-3 bg-white/5 backdrop-blur rounded-full px-4 py-2 border border-white/10 w-fit text-sm text-white/80">
-                <span className="text-violet-300">{f.icon}</span>{f.text}
+                <span className="text-violet-300">{feat.icon}</span>{feat.text}
               </div>
             ))}
           </div>
@@ -152,20 +183,23 @@ export default function AuthPage() {
           {/* LOGIN */}
           {tab === 'login' && (
             <div className="animate-fade-in">
-              <div className="text-2xl font-bold text-white mb-1">Welcome back 👋</div>
+              <div className="text-2xl font-bold text-white mb-1">Welcome back</div>
               <p className="text-purple-300/60 text-sm mb-7">Sign in to your PixelForge workspace</p>
 
-              {/* Tab switcher */}
               <div className="flex gap-1 bg-[#161625] border border-violet-900/30 rounded-xl p-1 mb-7">
                 <button onClick={() => setTab('login')} className="flex-1 py-2 rounded-lg text-sm font-semibold bg-violet-600 text-white transition-all">Sign In</button>
                 <button onClick={() => setTab('signup')} className="flex-1 py-2 rounded-lg text-sm font-medium text-purple-300/60 hover:text-white transition-all">Create Account</button>
               </div>
 
               <form onSubmit={handleLogin} className="space-y-4">
-                <div>
-                  <label className="label">Email</label>
-                  <input className="input" type="email" placeholder="you@example.com" value={form.email} onChange={f('email')}/>
-                </div>
+                <EmailInput
+                  value={form.email}
+                  onChange={f('email')}
+                  onBlur={() => {
+                    if (form.email && !isValidEmail(form.email)) setEmailError('Please enter a valid email address')
+                  }}
+                  emailError={emailError}
+                />
                 <div>
                   <label className="label">Password</label>
                   <div className="relative">
@@ -180,12 +214,6 @@ export default function AuthPage() {
                 </button>
               </form>
 
-              <div className="flex items-center gap-3 my-5 text-purple-300/30 text-xs">
-                <div className="flex-1 h-px bg-violet-900/40"/>or<div className="flex-1 h-px bg-violet-900/40"/>
-              </div>
-              <button onClick={handleDemo} disabled={loading} className="btn-ghost w-full justify-center py-2.5">
-                🚀 Try Demo — No Account Needed
-              </button>
               <p className="text-center text-xs text-purple-300/40 mt-5">
                 No account? <button onClick={() => setTab('signup')} className="text-violet-400 hover:text-violet-300">Sign up free →</button>
               </p>
@@ -208,7 +236,14 @@ export default function AuthPage() {
                   <div><label className="label">Name</label><input className="input" placeholder="Arjun Sharma" value={form.name} onChange={f('name')}/></div>
                   <div><label className="label">Workspace</label><input className="input" placeholder="My Studio" value={form.workspace} onChange={f('workspace')}/></div>
                 </div>
-                <div><label className="label">Email</label><input className="input" type="email" placeholder="you@example.com" value={form.email} onChange={f('email')}/></div>
+                <EmailInput
+                  value={form.email}
+                  onChange={f('email')}
+                  onBlur={() => {
+                    if (form.email && !isValidEmail(form.email)) setEmailError('Please enter a valid email address')
+                  }}
+                  emailError={emailError}
+                />
                 <div>
                   <label className="label">Password</label>
                   <div className="relative">
@@ -229,17 +264,12 @@ export default function AuthPage() {
                   {loading ? <><span className="spinner"/>&nbsp;Creating...</> : 'Create Free Account →'}
                 </button>
               </form>
-              <div className="flex items-center gap-3 my-5 text-purple-300/30 text-xs">
-                <div className="flex-1 h-px bg-violet-900/40"/>or<div className="flex-1 h-px bg-violet-900/40"/>
-              </div>
-              <button onClick={handleDemo} disabled={loading} className="btn-ghost w-full justify-center py-2.5">🚀 Try Demo</button>
             </div>
           )}
 
           {/* ONBOARDING */}
           {tab === 'onboard' && (
             <div className="animate-fade-in">
-              {/* Progress */}
               <div className="flex gap-2 mb-8">
                 {[1,2].map(s => (
                   <div key={s} className={`flex-1 h-1 rounded-full transition-all ${obStep >= s ? 'bg-violet-500' : 'bg-white/10'}`}/>
